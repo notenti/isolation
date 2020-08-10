@@ -1,7 +1,7 @@
 from time import time
 from enum import Enum
 import copy
-from typing import List, Tuple, Union, Optional, Any
+from typing import List, Set, Tuple, Union, Optional, Any
 from dataclasses import dataclass
 from player import Player
 
@@ -12,7 +12,9 @@ class State(Enum):
     BLOCKED = 'X'
     TRAIL = 'O'
 
+
 Space = Tuple[int, int]
+
 
 @dataclass
 class Queen:
@@ -20,11 +22,11 @@ class Queen:
     token: str
     last_move: Space = (-1, -1)
 
+
 Gameboard = List[List[Union[State, str]]]
 
-class Board:
-    __last_laser_pos__ = []
 
+class Board:
     def __init__(self, p1: Player, p2: Player, width: int = 7, height: int = 7) -> None:
         self.width = width
         self.height = height
@@ -43,7 +45,7 @@ class Board:
         self.__active_player_queen__ = self.__q1__
         self.__inactive_player_queen__ = self.__q2__
 
-        self.move_count = 0
+        self.__last_laser_pos__ = []
 
     @property
     def state(self) -> Gameboard:
@@ -67,8 +69,6 @@ class Board:
 
         self.__active_player__, self.__inactive_player__ = self.__inactive_player__, self.__active_player__
         self.__active_player_queen__, self.__inactive_player_queen__ = self.__inactive_player_queen__, self.__active_player_queen__
-
-        self.move_count += 1
 
         return (False, None)
 
@@ -119,11 +119,11 @@ class Board:
         b.__q2__ = self.__q2__
 
         b.__last_laser_pos__ = copy.deepcopy(self.__last_laser_pos__)
-        b.move_count = self.move_count
         b.__active_player__ = self.__active_player__
         b.__inactive_player__ = self.__inactive_player__
         b.__active_player_queen__ = copy.deepcopy(self.__active_player_queen__)
-        b.__inactive_player_queen__ = copy.deepcopy(self.__inactive_player_queen__)
+        b.__inactive_player_queen__ = copy.deepcopy(
+            self.__inactive_player_queen__)
         b.__board_state__ = self.state
         return b
 
@@ -167,14 +167,14 @@ class Board:
         return self.activePosition
 
     @property
-    def inactiveMoves(self) -> List[Space]:
+    def inactiveMoves(self) -> Set[Space]:
         return self.__getMoves__(self.__inactive_player_queen__.last_move)
 
     @property
-    def activeMoves(self) -> List[Space]:
+    def activeMoves(self) -> Set[Space]:
         return self.__getMoves__(self.__active_player_queen__.last_move)
 
-    def __getMoves__(self, move: Space) -> List[Space]:
+    def __getMoves__(self, move: Space) -> Set[Space]:
         if move == (-1, -1):
             return self.firstMoves
 
@@ -183,7 +183,7 @@ class Board:
                       (0, -1), (0, 1),
                       (1, -1), (1, 0), (1, 1)]
 
-        moves = []
+        moves = set()
 
         for direction in directions:
             for dist in range(1, max(self.width, self.height)):
@@ -192,24 +192,24 @@ class Board:
                 m = (row, col)
 
                 if self.moveIsInBoard(m) and self.isSpotOpen(m) and m not in moves:
-                    moves.append(m)
+                    moves.add(m)
                 else:
                     break
         return moves
 
-    def getPlayerMoves(self, my_player: Player = None) -> List[Space]:
+    def getPlayerMoves(self, my_player: Player = None) -> Set[Space]:
         if my_player == self.__active_player__:
             return self.activeMoves
         return self.inactiveMoves
 
-    def getOpponentMoves(self, my_player: Player = None) -> List[Space]:
+    def getOpponentMoves(self, my_player: Player = None) -> Set[Space]:
         if my_player == self.__active_player__:
             return self.inactiveMoves
         return self.activeMoves
 
     @property
-    def firstMoves(self) -> List[Space]:
-        return [(i, j) for i in range(self.height) for j in range(self.width) if self.__board_state__[i][j] == State.BLANK]
+    def firstMoves(self) -> Set[Space]:
+        return {(i, j) for i in range(self.height) for j in range(self.width) if self.__board_state__[i][j] == State.BLANK}
 
     def moveIsInBoard(self, move: Space) -> bool:
         row, col = move
@@ -218,10 +218,6 @@ class Board:
     def isSpotOpen(self, move: Space) -> bool:
         row, col = move
         return self.__board_state__[row][col] == State.BLANK
-
-    def isSpotQueen(self, move: Space) -> bool:
-        row, col = move
-        return self.__board_state__[row][col] in [self.__q1__.token, self.__q2__.token]
 
     def printBoard(self) -> str:
         out = '|'
@@ -236,7 +232,6 @@ class Board:
                     out += self.__active_player_queen__.token
                 elif (i, j) == self.__inactive_player_queen__.last_move:
                     out += self.__inactive_player_queen__.token
-
                 elif self.__board_state__[i][j] == State.BLANK:
                     out += '  '
                 elif self.__board_state__[i][j] == State.TRAIL:
@@ -251,19 +246,20 @@ class Board:
 
         return out
 
-    def playIsolation(self, time_limit: int = 10000, print_moves: bool = False) -> Tuple[Queen, List[Space], str]:
+    def playIsolation(self, time_limit: float = 1e6, print_moves: bool = False) -> Tuple[Queen, List[Space], str]:
         move_history = []
 
-        def curTime() -> int:
-            return int(time() * 1000)
+        def curTime() -> float:
+            return float(time() * 1000)
 
         while True:
             game = self.copy()
             start_time = curTime()
 
-            def timeLeft() -> int:
+            def timeLeft() -> float:
                 return time_limit - (curTime() - start_time)
 
+            print(timeLeft())
             if print_moves:
                 print(f'\n {self.__active_player_queen__.token} turn')
                 print(game.copy().printBoard())
