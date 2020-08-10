@@ -1,18 +1,23 @@
 import random
+from flask import Flask
 from board import Board
 from player import HumanPlayer, Player, RandomPlayer
 
 
-Q1 = Player()
-Q2 = RandomPlayer()
+app = Flask(__name__)
 
-game = Board(Q1, Q2)
+@app.route('/')
+def play() -> str:
+    Q1 = Player()
+    Q2 = RandomPlayer()
 
-for _ in range(2):
-    moves = game.activeMoves
-    # random.shuffle(moves)
-    game = game.forecastMove(moves.pop())[0]
+    game = Board(Q1, Q2)
 
-winner, history, termination = game.playIsolation(1e6, print_moves=True)
+    for _ in range(2):
+        moves = game.activeMoves
+        # random.shuffle(moves)
+        game = game.forecastMove(moves.pop())[0]
 
-print('\n', f'{winner} has won. Reason:  {termination}')
+    winner, history, termination = game.playIsolation(1e6, print_moves=True)
+
+    return f'{winner} has won. Reason:  {termination}'
