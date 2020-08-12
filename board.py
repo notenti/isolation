@@ -34,8 +34,6 @@ class Board:
 
         self.__board_repres__ = board_repres
 
-        self.__p1__ = 'me'
-        self.__p2__ = 'them'
 
         self.__q1__ = Queen(State.Q1)
         self.__q2__ = Queen(State.Q2)
@@ -91,9 +89,7 @@ class Board:
             self.__board_state__[r][c] = State.TRAIL
 
 
-
-        self.__active_player__ = self.__p1__
-        self.__inactive_player__ = self.__p2__
+        self.__agent_active__ = True
 
         self.__active_player_queen__ = self.__q1__
         self.__inactive_player_queen__ = self.__q2__
@@ -120,7 +116,7 @@ class Board:
         if not self.inactiveMoves:
             return True, self.__active_player_queen__
 
-        self.__active_player__, self.__inactive_player__ = self.__inactive_player__, self.__active_player__
+        self.__agent_active__ = not self.__agent_active__
         self.__active_player_queen__, self.__inactive_player_queen__ = self.__inactive_player_queen__, self.__active_player_queen__
 
         return (False, None)
@@ -172,8 +168,7 @@ class Board:
         b.__q2__ = self.__q2__
 
         b.__last_laser_pos__ = copy.deepcopy(self.__last_laser_pos__)
-        b.__active_player__ = self.__active_player__
-        b.__inactive_player__ = self.__inactive_player__
+        b.__agent_active__ = self.__agent_active__
         b.__active_player_queen__ = copy.deepcopy(self.__active_player_queen__)
         b.__inactive_player_queen__ = copy.deepcopy(
             self.__inactive_player_queen__)
@@ -186,12 +181,12 @@ class Board:
         return (new_board, is_over, winner)
 
     @property
-    def activePlayer(self) -> str:
-        return self.__active_player__
+    def agentActive(self) -> bool:
+        return self.__agent_active__
 
     @property
-    def inactivePlayer(self) -> str:
-        return self.__inactive_player__
+    def agentInactive(self) -> bool:
+        return not self.__agent_active__
 
     @property
     def activePlayersQueen(self) -> Queen:
@@ -240,13 +235,13 @@ class Board:
                     break
         return moves
 
-    def getPlayerMoves(self, player: str) -> Set[Space]:
-        if player == self.__active_player__:
+    def getPlayerMoves(self, agent_active: bool) -> Set[Space]:
+        if agent_active == self.__agent_active__:
             return self.activeMoves
         return self.inactiveMoves
 
-    def getOpponentMoves(self, player: str) -> Set[Space]:
-        if player == self.__active_player__:
+    def getOpponentMoves(self, agent_active: bool) -> Set[Space]:
+        if agent_active == self.__agent_active__:
             return self.inactiveMoves
         return self.activeMoves
 

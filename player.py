@@ -5,8 +5,8 @@ import agents
 Space = Tuple[int, int]
 
 class OpenMoveEvalFn:
-    def score(self, game, my_player=None):
-        return len(game.getPlayerMoves(my_player)) - len(game.getOpponentMoves(my_player))
+    def score(self, game, agent_active=True):
+        return len(game.getPlayerMoves(agent_active)) - len(game.getOpponentMoves(agent_active))
 
 
 class AlphaBetaPlayer:
@@ -15,12 +15,12 @@ class AlphaBetaPlayer:
         self.eval_fn = eval_fn
         self.game = game
 
-    def move(self) -> Space:
-        best_move, _ = agents.alphabeta(self, self.game, depth=3)
-        return best_move
+    def move(self, depth: int) -> Tuple[Space, float]:
+        best_move, best_value = agents.alphabeta(self, True, self.game, depth=depth)
+        return best_move, best_value
 
     def utility(self, game):
-        return self.eval_fn.score(game, self)
+        return self.eval_fn.score(game)
 
 class RandomPlayer:
     def __init__(self):

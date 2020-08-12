@@ -15,6 +15,7 @@ def determineMove(repres: str) -> str:
 
     game = Board(repres)
     agent = AlphaBetaPlayer(game)
-    r, c = agent.move()
+    move, _ = agent.move(depth=3)
+    r, c = move
     return f'{r}{c}'
 
