@@ -4,11 +4,11 @@ from player import AlphaBetaPlayer
 from typing import Tuple
 Space = Tuple[int, int]
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder='static/dist', template_folder='static')
 
-# @app.route('/')
-# def index():
-#     return render_template('index.html')
+@app.route('/')
+def index():
+    return render_template('index.html')
 
 @app.route('/move/<repres>')
 def determineMove(repres: str) -> str:
