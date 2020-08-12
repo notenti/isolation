@@ -1,23 +1,20 @@
-import random
-from flask import Flask
-from board import Board
-from player import HumanPlayer, Player, RandomPlayer
-
+from flask import Flask, render_template
+from board import Board, Space
+from player import AlphaBetaPlayer
+from typing import Tuple
+Space = Tuple[int, int]
 
 app = Flask(__name__)
 
-@app.route('/')
-def play() -> str:
-    Q1 = Player()
-    Q2 = RandomPlayer()
+# @app.route('/')
+# def index():
+#     return render_template('index.html')
 
-    game = Board(Q1, Q2)
+@app.route('/move/<repres>')
+def determineMove(repres: str) -> str:
 
-    for _ in range(2):
-        moves = game.activeMoves
-        # random.shuffle(moves)
-        game = game.forecastMove(moves.pop())[0]
+    game = Board(repres)
+    agent = AlphaBetaPlayer(game)
+    r, c = agent.move()
+    return f'{r}{c}'
 
-    winner, history, termination = game.playIsolation(1e6, print_moves=True)
-
-    return f'{winner} has won. Reason:  {termination}'

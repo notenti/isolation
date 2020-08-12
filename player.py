@@ -9,15 +9,14 @@ class OpenMoveEvalFn:
         return len(game.getPlayerMoves(my_player)) - len(game.getOpponentMoves(my_player))
 
 
-class Player:
-    def __init__(self, search_depth: int = 3, eval_fn=OpenMoveEvalFn()):
+class AlphaBetaPlayer:
+    def __init__(self, game, eval_fn=OpenMoveEvalFn()):
 
         self.eval_fn = eval_fn
-        self.search_depth = search_depth
+        self.game = game
 
-    def move(self, game, time_left: Callable[..., float]) -> Space:
-        best_move, _ = agents.alphabeta(
-            self, game, time_left, depth=self.search_depth)
+    def move(self) -> Space:
+        best_move, _ = agents.alphabeta(self, self.game, depth=3)
         return best_move
 
     def utility(self, game):

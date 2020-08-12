@@ -1,10 +1,4 @@
-from typing import Callable
-
-
-def alphabeta(player, game, time_left: Callable[..., float], depth: int, alpha: float = float("-inf"), beta=float("inf")):
-
-    if time_left() < 1:
-        raise Exception()
+def alphabeta(player, game, depth: int, alpha: float = float("-inf"), beta=float("inf")):
 
     best_value = float("-inf")
 
@@ -13,7 +7,6 @@ def alphabeta(player, game, time_left: Callable[..., float], depth: int, alpha: 
         value = minValueAb(player,
                            game.forecastMove(move)[0],
                            depth,
-                           time_left,
                            alpha=float("-inf"),
                            beta=float("inf"))
 
@@ -28,11 +21,8 @@ def alphabeta(player, game, time_left: Callable[..., float], depth: int, alpha: 
     return best_move, best_value
 
 
-def maxValueAb(player, game, depth: int, time_left: Callable[..., float], alpha: float, beta: float) -> float:
+def maxValueAb(player, game, depth: int, alpha: float, beta: float) -> float:
     """returns a utility value"""
-    if time_left() < 1:
-        raise Exception()
-
     if depth == 1:
         return player.utility(game)
 
@@ -41,7 +31,6 @@ def maxValueAb(player, game, depth: int, time_left: Callable[..., float], alpha:
         val = max(val, minValueAb(player,
                                   game.forecastMove(move)[0],
                                   depth - 1,
-                                  time_left,
                                   alpha,
                                   beta))
         if val >= beta:
@@ -50,13 +39,8 @@ def maxValueAb(player, game, depth: int, time_left: Callable[..., float], alpha:
     return val
 
 
-def minValueAb(player, game, depth: int, time_left: Callable[..., float], alpha: float, beta: float) -> float:
+def minValueAb(player, game, depth: int, alpha: float, beta: float) -> float:
     """returns a utility value"""
-
-    if time_left() < 1:
-        print("AB - Timeout")
-        raise Exception()
-
     if depth == 1:
         return player.utility(game)
 
@@ -65,7 +49,6 @@ def minValueAb(player, game, depth: int, time_left: Callable[..., float], alpha:
         val = min(val, maxValueAb(player,
                                   game.forecastMove(move)[0],
                                   depth - 1,
-                                  time_left,
                                   alpha,
                                   beta))
         if val <= alpha:

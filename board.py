@@ -3,7 +3,6 @@ from enum import Enum
 import copy
 from typing import List, Set, Tuple, Union, Optional, Any
 from dataclasses import dataclass
-from player import Player
 
 
 class State(Enum):
@@ -11,6 +10,8 @@ class State(Enum):
     BLANK = ' '
     BLOCKED = 'X'
     TRAIL = 'O'
+    Q1 = 'Q1'
+    Q2 = 'Q2'
 
 
 Space = Tuple[int, int]
@@ -19,28 +20,80 @@ Space = Tuple[int, int]
 @dataclass
 class Queen:
     """Represents Queen."""
-    token: str
+    token: State
     last_move: Space = (-1, -1)
 
 
-Gameboard = List[List[Union[State, str]]]
+Gameboard = List[List[Union[State]]]
 
 
 class Board:
-    def __init__(self, p1: Player, p2: Player, width: int = 7, height: int = 7) -> None:
-        self.width = width
-        self.height = height
+    def __init__(self, board_repres: str) -> None:
+        self.width = 7
+        self.height = 7
 
-        self.__p1__ = p1
-        self.__p2__ = p2
+        self.__board_repres__ = board_repres
 
-        self.__q1__ = Queen('Q1')
-        self.__q2__ = Queen('Q2')
+        self.__p1__ = 'me'
+        self.__p2__ = 'them'
 
-        self.__board_state__ = [[State.BLANK] * width for _ in range(height)]
+        self.__q1__ = Queen(State.Q1)
+        self.__q2__ = Queen(State.Q2)
 
-        self.__active_player__ = p1
-        self.__inactive_player__ = p2
+        opp_last_queen_start = board_repres.index('O')
+        ai_last_queen_start = board_repres.index('A')
+        x_start = board_repres.index('X')
+        trail_start = board_repres.index('T')
+
+        opp_queen_walker = opp_last_queen_start + 1
+        while opp_queen_walker != ai_last_queen_start:
+            opp_queen_loc = (int(board_repres[opp_queen_walker]), int(board_repres[opp_queen_walker + 1]))
+            opp_queen_walker += 2
+            self.__q2__.last_move = opp_queen_loc
+
+        ai_queen_walker = ai_last_queen_start + 1
+        while ai_queen_walker != x_start:
+            ai_queen_loc = (int(board_repres[ai_queen_walker]), int(board_repres[ai_queen_walker + 1]))
+            ai_queen_walker += 2
+            self.__q1__.last_move = ai_queen_loc
+
+        x_walker = x_start + 1
+        spaces_occupied_x = []
+        while x_walker != trail_start:
+            x_loc = (int(board_repres[x_walker]), int(board_repres[x_walker + 1]))
+            spaces_occupied_x.append(x_loc)
+            x_walker += 2
+
+        trail_walker = trail_start + 1
+        spaces_occupied_trail = []
+        while trail_walker < len(self.__board_repres__) :
+            trail_loc = (int(board_repres[trail_walker]), int(board_repres[trail_walker + 1]))
+            spaces_occupied_trail.append(trail_loc)
+            trail_walker += 2
+
+
+        self.__board_state__ = [[State.BLANK] * self.width for _ in range(self.height)]
+
+        if self.__q1__.last_move != (-1, -1):
+            r, c = self.__q1__.last_move
+            self.__board_state__[r][c] = State.Q1
+
+        if self.__q2__.last_move != (-1, -1):
+            r, c = self.__q2__.last_move
+            self.__board_state__[r][c] = State.Q2
+
+        while spaces_occupied_x:
+            r, c = spaces_occupied_x.pop()
+            self.__board_state__[r][c] = State.BLOCKED
+
+        while spaces_occupied_trail:
+            r, c = spaces_occupied_trail.pop()
+            self.__board_state__[r][c] = State.TRAIL
+
+
+
+        self.__active_player__ = self.__p1__
+        self.__inactive_player__ = self.__p2__
 
         self.__active_player_queen__ = self.__q1__
         self.__inactive_player_queen__ = self.__q2__
@@ -114,7 +167,7 @@ class Board:
             self.__board_state__[r][c] = State.BLANK
 
     def copy(self):
-        b = Board(self.__p1__, self.__p2__, self.width, self.height)
+        b = Board(self.__board_repres__)
         b.__q1__ = self.__q1__
         b.__q2__ = self.__q2__
 
@@ -133,11 +186,11 @@ class Board:
         return (new_board, is_over, winner)
 
     @property
-    def activePlayer(self) -> Player:
+    def activePlayer(self) -> str:
         return self.__active_player__
 
     @property
-    def inactivePlayer(self) -> Player:
+    def inactivePlayer(self) -> str:
         return self.__inactive_player__
 
     @property
@@ -155,16 +208,6 @@ class Board:
     @property
     def activePosition(self) -> Space:
         return self.__active_player_queen__.last_move
-
-    def getPlayerPosition(self, my_player: Player = None) -> Space:
-        if my_player == self.activePlayer:
-            return self.activePosition
-        return self.inactivePosition
-
-    def getOpponentPosition(self, my_player: Player = None) -> Space:
-        if my_player == self.activePlayer:
-            return self.inactivePosition
-        return self.activePosition
 
     @property
     def inactiveMoves(self) -> Set[Space]:
@@ -197,13 +240,13 @@ class Board:
                     break
         return moves
 
-    def getPlayerMoves(self, my_player: Player = None) -> Set[Space]:
-        if my_player == self.__active_player__:
+    def getPlayerMoves(self, player: str) -> Set[Space]:
+        if player == self.__active_player__:
             return self.activeMoves
         return self.inactiveMoves
 
-    def getOpponentMoves(self, my_player: Player = None) -> Set[Space]:
-        if my_player == self.__active_player__:
+    def getOpponentMoves(self, player: str) -> Set[Space]:
+        if player == self.__active_player__:
             return self.inactiveMoves
         return self.activeMoves
 
@@ -218,71 +261,3 @@ class Board:
     def isSpotOpen(self, move: Space) -> bool:
         row, col = move
         return self.__board_state__[row][col] == State.BLANK
-
-    def printBoard(self) -> str:
-        out = '|'
-
-        for i in range(self.width):
-            out += str(i) + '|'
-        out += '\n\r'
-        for i in range(self.height):
-            out += str(i) + '|'
-            for j in range(self.width):
-                if (i, j) == self.__active_player_queen__.last_move:
-                    out += self.__active_player_queen__.token
-                elif (i, j) == self.__inactive_player_queen__.last_move:
-                    out += self.__inactive_player_queen__.token
-                elif self.__board_state__[i][j] == State.BLANK:
-                    out += '  '
-                elif self.__board_state__[i][j] == State.TRAIL:
-                    out += '- '
-                else:
-                    out += '><'
-
-                out += '|'
-
-            if i != self.height - 1:
-                out += '\n\r'
-
-        return out
-
-    def playIsolation(self, time_limit: float = 1e6, print_moves: bool = False) -> Tuple[Queen, List[Space], str]:
-        move_history = []
-
-        def curTime() -> float:
-            return float(time() * 1000)
-
-        while True:
-            game = self.copy()
-            start_time = curTime()
-
-            def timeLeft() -> float:
-                return time_limit - (curTime() - start_time)
-
-            print(timeLeft())
-            if print_moves:
-                print(f'\n {self.__active_player_queen__.token} turn')
-                print(game.copy().printBoard())
-
-            cur_move = self.__active_player__.move(game, timeLeft)
-
-            if self.__active_player__ == self.__p1__:
-                move_history.append([cur_move])
-            else:
-                move_history[-1].append(cur_move)
-
-            if time_limit and timeLeft() <= 0:
-                return self.__inactive_player_queen__, move_history, (self.__active_player_queen__.token + ' timed out.')
-
-            if cur_move not in self.activeMoves:
-                return self.__inactive_player_queen__, move_history, (self.__active_player_queen__.token + ' made an illegal move.')
-
-            is_over, _ = self.__applyMove__(cur_move)
-
-            if print_moves:
-                print(self.copy().printBoard())
-
-            if is_over:
-                if not self.inactiveMoves:
-                    return self.__active_player_queen__, move_history, (f'{self.__inactive_player_queen__.token} has no legal moves left.')
-                return self.__active_player_queen__, move_history, (f'{self.__inactive_player_queen__.token} was forced off the grid.')
