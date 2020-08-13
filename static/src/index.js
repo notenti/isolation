@@ -1,6 +1,5 @@
-const add = (a = 1, b = 2) => {
-    return a + b
-}
 
-let thing = document.getElementById('root')
-thing.innerHTML = "This is from JS"
+import './styles.css'
+import Isolation from './isolation'
+
+let board = new Isolation('root')

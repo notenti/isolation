@@ -1,0 +1,13 @@
+body {
+    background-color: seagreen;
+}
+
+.square {
+    background-color: seashell;
+    border: 2px solid;
+    border-color: sienna;
+    position: relative;
+    display: inline-block;
+    height: 40px;
+    width: 40px;
+}
